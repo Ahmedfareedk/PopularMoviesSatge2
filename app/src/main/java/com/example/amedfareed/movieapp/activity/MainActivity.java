@@ -10,6 +10,10 @@ import android.content.res.Configuration;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.provider.CallLog;
+import android.support.annotation.NonNull;
+import android.support.design.internal.BottomNavigationItemView;
+import android.support.design.widget.BottomNavigationView;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,10 +22,18 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.telecom.Conference;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.Toast;
 
 import com.example.amedfareed.movieapp.BuildConfig;
@@ -42,7 +54,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.http.GET;
 
-public class MainActivity extends AppCompatActivity  implements SharedPreferences.OnSharedPreferenceChangeListener{
+public class MainActivity extends AppCompatActivity  implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MOVIES_API_KEY = "";
@@ -54,6 +66,7 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
     private GetMoviesService service;
     private List<PopularMovie> moviesList;
     private ProgressDialog progressDialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,78 +82,19 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
         });
         initializeViewItems();
     }
-    public void initializeViewItems(){
+
+    public void initializeViewItems() {
         ButterKnife.bind(this);
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading Movies...");
         progressDialog.setCancelable(false);
         progressDialog.show();
-        moviesList =  new ArrayList<>();
+        moviesList = new ArrayList<>();
         adapter = new MovieAdapter(MainActivity.this, moviesList);
-        if(getActivity().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
-            recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-        }else{
-            recyclerView.setLayoutManager(new GridLayoutManager(this, 4));
-        }
+        recyclerView.setLayoutManager(new GridLayoutManager(this, calculateNumberOfColumns(this)));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(adapter);
         checkMoviesSortOrder();
-    }
-    public Activity getActivity() {
-        Context context = this;
-        while (context instanceof ContextWrapper){
-            if(context instanceof Activity){
-                return (Activity)context;
-            }
-            context  = ((ContextWrapper) context).getBaseContext();
-        }
-        return null;
-    }
-    public void fetchMostPopularMovies(){
-        RetrofitBuilder clientBuilder = new RetrofitBuilder();
-        service = clientBuilder.createRetrofitBuilder()
-                .create(GetMoviesService.class);
-        Call<MovieResponses> moviesCall = service.getPopularMovies(MOVIES_API_KEY);
-        moviesCall.enqueue(new Callback<MovieResponses>() {
-            @Override
-            public void onResponse(Call<MovieResponses> call, Response<MovieResponses> response) {
-                List<PopularMovie>  movies = response.body().getResults();
-                recyclerView.setAdapter(new MovieAdapter(MainActivity.this, movies));
-                recyclerView.smoothScrollToPosition(0);
-                if(swipeRefreshLayout.isRefreshing()){
-                    swipeRefreshLayout.setRefreshing(false);
-                }
-                progressDialog.dismiss();
-            }
-            @Override
-            public void onFailure(Call<MovieResponses> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Error while fetching", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, t.getLocalizedMessage());
-            }
-        });
-    }
-    public void fetchTopRatedMovies(){
-        RetrofitBuilder clientBuilder = new RetrofitBuilder();
-        service = clientBuilder.createRetrofitBuilder()
-                .create(GetMoviesService.class);
-        Call<MovieResponses> moviesCall = service.getTopRatedMovies(MOVIES_API_KEY);
-        moviesCall.enqueue(new Callback<MovieResponses>() {
-            @Override
-            public void onResponse(Call<MovieResponses> call, Response<MovieResponses> response) {
-                List<PopularMovie>  movies = response.body().getResults();
-                recyclerView.setAdapter(new MovieAdapter(MainActivity.this, movies));
-                recyclerView.smoothScrollToPosition(0);
-                if(swipeRefreshLayout.isRefreshing()){
-                    swipeRefreshLayout.setRefreshing(false);
-                }
-                progressDialog.dismiss();
-            }
-            @Override
-            public void onFailure(Call<MovieResponses> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Error while fetching", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, t.getLocalizedMessage());
-            }
-        });
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -151,35 +105,78 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.setting_action:
-                Intent intent = new Intent(this, SettingActivity.class);
-                startActivity(intent);
+            case R.id.most_popular_action:
+                fetchMovies(getString(R.string.pref_most_popular));
+                return true;
+
+            case R.id.top_rated_action:
+                fetchMovies(getString(R.string.pref_top_rated));
                 return true;
             default:
-                return super.onOptionsItemSelected(item);
+                return false;
         }
     }
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         checkMoviesSortOrder();
     }
-    public void checkMoviesSortOrder(){
+    public void checkMoviesSortOrder() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String sortOrder = preferences.getString(
-                this.getString(R.string.pref_sort_order_key),
-                this.getString(R.string.pref_most_popular)
-        );
-        if(sortOrder.equals(this.getString(R.string.pref_most_popular))){
-            fetchMostPopularMovies();
-        }else{
-            fetchTopRatedMovies();
+        String mostPopularPOrder = getString(R.string.pref_most_popular);
+        String topRatedOrder = getString(R.string.pref_top_rated);
+        String sortOrderKey = getString(R.string.pref_sort_order_key);
+        String sortOrder = preferences.getString(sortOrderKey, mostPopularPOrder);
+
+        if (sortOrder.equals(mostPopularPOrder)) {
+            fetchMovies(mostPopularPOrder);
+        } else {
+            fetchMovies(topRatedOrder);
         }
     }
     @Override
     protected void onResume() {
         super.onResume();
-        if(moviesList.isEmpty()){
+        if (moviesList.isEmpty()) {
             checkMoviesSortOrder();
         }
     }
+    public static int calculateNumberOfColumns(Context context) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        float dpScreenWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int scalingFactor = 180;
+        int numberOfColumns = (int) (dpScreenWidth / scalingFactor);
+        if (numberOfColumns < 2)
+            numberOfColumns = 2;
+        return numberOfColumns;
+    }
+
+    public void fetchMovies(String criteriaOrder){
+       final RetrofitBuilder clientBuilder = new RetrofitBuilder();
+        service = clientBuilder.createRetrofitBuilder()
+                .create(GetMoviesService.class);
+        Call<MovieResponses> moviesCall = null;
+        if(criteriaOrder.equals(getString(R.string.pref_most_popular))){
+            moviesCall = service.getPopularMovies(MOVIES_API_KEY);
+        }else if(criteriaOrder.equals(getString(R.string.pref_top_rated))){
+            moviesCall = service.getTopRatedMovies(MOVIES_API_KEY);
+        }
+
+        moviesCall.enqueue(new Callback<MovieResponses>() {
+            @Override
+            public void onResponse(Call<MovieResponses> call, Response<MovieResponses> response) {
+                List<PopularMovie> movieList = response.body().getResults();
+                recyclerView.setAdapter (new MovieAdapter(MainActivity.this, movieList));
+                recyclerView.smoothScrollToPosition(0);
+                if (swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+                progressDialog.dismiss();
+            }
+            @Override
+            public void onFailure(Call<MovieResponses> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Fetching process failed", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }
+
