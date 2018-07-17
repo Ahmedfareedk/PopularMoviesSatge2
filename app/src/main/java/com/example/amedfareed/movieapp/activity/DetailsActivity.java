@@ -6,12 +6,15 @@ import android.os.PersistableBundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.TabLayout;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.support.v7.widget.Toolbar;
 
+import com.example.amedfareed.movieapp.MovieAdapter.CategoryAdapter;
 import com.example.amedfareed.movieapp.R;
 import com.squareup.picasso.Picasso;
 
@@ -20,27 +23,19 @@ import org.w3c.dom.Text;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-/**
- * Created by amedfareed on 26/03/18.
- */
-
 public class DetailsActivity extends AppCompatActivity {
     @BindView(R.id.toolbar)
     Toolbar toolbar;
-    @BindView(R.id.title)
-    TextView movieName;
-    @BindView(R.id.review)
-    TextView movieReview;
-    @BindView(R.id.user_rating_tv)
-    TextView userRatingTV;
-    @BindView(R.id.release_date_tv)
-    TextView movieReleaseDate;
     @BindView(R.id.movie_poster)
     ImageView moviePoster;
     @BindView(R.id.collapse_layout)
     CollapsingToolbarLayout collapsingToolbarLayout;
     @BindView(R.id.app_bar)
     AppBarLayout appBarLayout;
+    @BindView(R.id.view_pager)
+    ViewPager viewPager;
+    @BindView(R.id.tab_layout)
+    TabLayout tabLayout;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,25 +43,19 @@ public class DetailsActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        CategoryAdapter adapter = new CategoryAdapter(getSupportFragmentManager());
+        viewPager.setAdapter(adapter);
+        tabLayout.setupWithViewPager(viewPager);
         Intent intent = getIntent();
-        if (intent.hasExtra("original_title")) {
-            String moviePosterPath = intent.getExtras().getString("poster_path");
-            String movieTitle = intent.getExtras().getString("original_title");
-            String overView = intent.getExtras().getString("over_view");
-            String releaseDate = intent.getExtras().getString("release_date");
-            String movieUserRating = intent.getExtras().getString("user_rating");
-            movieName.setText(movieTitle);
-            movieReview.setText(overView);
-            userRatingTV.setText(movieUserRating);
-            movieReleaseDate.setText(releaseDate);
-            Picasso.with(this)
+        String moviePosterPath = intent.getExtras().getString("poster_path");
+        Picasso.with(this)
                     .load(moviePosterPath)
                     .into(moviePoster);
-        }
         initializeCollapsingLayout();
     }
 
     private void initializeCollapsingLayout() {
+        final String title = getIntent().getExtras().getString("original_title");
         collapsingToolbarLayout.setTitle(" ");
         appBarLayout.setExpanded(true);
         appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
@@ -78,7 +67,7 @@ public class DetailsActivity extends AppCompatActivity {
                     appBarScrollRange = appBarLayout.getTotalScrollRange();
                 }
                 if (appBarScrollRange + verticalOffset == 0) {
-                    collapsingToolbarLayout.setTitle(movieName.getText());
+                    collapsingToolbarLayout.setTitle(title);
                     toolbar.setVisibility(View.VISIBLE);
                 } else if (isShow) {
                     collapsingToolbarLayout.setTitle(" ");

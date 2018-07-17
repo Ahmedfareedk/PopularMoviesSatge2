@@ -13,9 +13,16 @@
     <color name="colorGrey">#707070</color>
     <color name="colorGreyLight">#8A8A8A</color>
     <color name="cardBackground">#e7194769</color>
-    <color name="movieTitle">#FAE3D9</color>
-    <color name="layoutBackground">#000</color>
+    <color name="movieTitle">#F8F7F7</color>
+
+    <color name="layoutBackground">#e9000000</color>
     <color name="userRatingColor">#FF5AB0</color>
     <color name="toolbar_background">#a7393e46</color>
-    <color name="DetailColor">#B83B5E</color>
+    <color name="DetailColor">#dfe0d4</color>
+    <color name="infoBackground">#dfe0d4</color>
+    <color name="trailer_text_color">#c2c2c2</color>
+    <color name="viewColor">#ac5e5e5e</color>
+    <color name="cardViewBackground">#1b1b1b</color>
+    <color name="indicatorColor">#ff008e</color>
+    <color name="content_text">#A8A29D</color>
 </resources>

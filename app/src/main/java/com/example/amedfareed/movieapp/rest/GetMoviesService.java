@@ -1,6 +1,8 @@
 package com.example.amedfareed.movieapp.rest;
 
 import com.example.amedfareed.movieapp.model.MovieResponses;
+import com.example.amedfareed.movieapp.model.MovieReviewsResponses;
+import com.example.amedfareed.movieapp.model.MovieTrailerReponse;
 import com.example.amedfareed.movieapp.model.PopularMovie;
 
 import retrofit2.Call;
@@ -18,4 +20,8 @@ public interface GetMoviesService {
     Call<MovieResponses> getTopRatedMovies(@Query("api_key") String apiKey);
     @GET("movie/popular")
     Call<MovieResponses> getPopularMovies( @Query("api_key") String apiKey);
+    @GET("movie/{movie_id}/videos")
+    Call<MovieTrailerReponse> getMovieTrailer(@Path("movie_id") int id, @Query("api_key") String apiKey);
+    @GET("movie/{movie_id}/reviews")
+    Call<MovieReviewsResponses> getMovieReviews(@Path("movie_id") int id, @Query("api_key") String apiKey);
 }

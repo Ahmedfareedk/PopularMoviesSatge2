@@ -13,4 +13,8 @@
         app:showAsAction="never"
         android:title="@string/pref_most_popular"/>
 
+    <item
+        android:id="@+id/favorite_action"
+        app:showAsAction="never"
+        android:title="@string/pref_favorites"/>
 </menu>

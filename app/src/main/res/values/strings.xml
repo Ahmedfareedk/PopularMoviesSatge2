@@ -10,4 +10,8 @@
     <string name="pref_most_popular">Most Popular</string>
     <string name="pref_top_rated">Top Rated</string>
     <string name="appName">Popular Movies</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="pref_favorites">Favorites</string>
 </resources>

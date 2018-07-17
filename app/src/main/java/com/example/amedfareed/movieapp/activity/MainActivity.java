@@ -7,6 +7,8 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.provider.CallLog;
@@ -27,22 +29,21 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
-import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.amedfareed.movieapp.BuildConfig;
+import com.example.amedfareed.movieapp.MovieAdapter.FavoriteMoviesAdapter;
 import com.example.amedfareed.movieapp.MovieAdapter.MovieAdapter;
 import com.example.amedfareed.movieapp.R;
+import com.example.amedfareed.movieapp.data.DbHelper;
+import com.example.amedfareed.movieapp.data.MoviesContract;
 import com.example.amedfareed.movieapp.model.MovieResponses;
 import com.example.amedfareed.movieapp.model.PopularMovie;
 import com.example.amedfareed.movieapp.rest.RetrofitBuilder;
 import com.example.amedfareed.movieapp.rest.GetMoviesService;
+import com.like.LikeButton;
+import com.like.OnLikeListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.http.GET;
 
-public class MainActivity extends AppCompatActivity  implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String MOVIES_API_KEY = "";
@@ -62,9 +63,10 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
     RecyclerView recyclerView;
     @BindView(R.id.refreshLayout)
     SwipeRefreshLayout swipeRefreshLayout;
-    private MovieAdapter adapter;
+    public MovieAdapter adapter;
     private GetMoviesService service;
-    private List<PopularMovie> moviesList;
+    public List<PopularMovie> moviesList;
+    public DbHelper favoriteDbHelper;
     private ProgressDialog progressDialog;
 
     @Override
@@ -84,7 +86,6 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
     }
 
     public void initializeViewItems() {
-        ButterKnife.bind(this);
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading Movies...");
         progressDialog.setCancelable(false);
@@ -96,11 +97,13 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
         recyclerView.setAdapter(adapter);
         checkMoviesSortOrder();
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -108,38 +111,49 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
             case R.id.most_popular_action:
                 fetchMovies(getString(R.string.pref_most_popular));
                 return true;
-
             case R.id.top_rated_action:
                 fetchMovies(getString(R.string.pref_top_rated));
+                return true;
+            case R.id.favorite_action:
+                initializeFavoriteMoviesList();
                 return true;
             default:
                 return false;
         }
     }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         checkMoviesSortOrder();
     }
+
     public void checkMoviesSortOrder() {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String mostPopularPOrder = getString(R.string.pref_most_popular);
+        String mostPopularOrder = getString(R.string.pref_most_popular);
         String topRatedOrder = getString(R.string.pref_top_rated);
+        String favoriteMovies = getString(R.string.pref_favorites);
         String sortOrderKey = getString(R.string.pref_sort_order_key);
-        String sortOrder = preferences.getString(sortOrderKey, mostPopularPOrder);
+        String sortOrder = preferences.getString(sortOrderKey, mostPopularOrder);
 
-        if (sortOrder.equals(mostPopularPOrder)) {
-            fetchMovies(mostPopularPOrder);
-        } else {
+        if (sortOrder.equals(mostPopularOrder)) {
+            fetchMovies(mostPopularOrder);
+        } else if (sortOrder.equals(topRatedOrder)) {
             fetchMovies(topRatedOrder);
+        } else if (sortOrder.equals(favoriteMovies)) {
+            initializeFavoriteMoviesList();
         }
     }
+
     @Override
     protected void onResume() {
         super.onResume();
         if (moviesList.isEmpty()) {
             checkMoviesSortOrder();
+        } else {
+            checkMoviesSortOrder();
         }
     }
+
     public static int calculateNumberOfColumns(Context context) {
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         float dpScreenWidth = displayMetrics.widthPixels / displayMetrics.density;
@@ -150,33 +164,51 @@ public class MainActivity extends AppCompatActivity  implements SharedPreference
         return numberOfColumns;
     }
 
-    public void fetchMovies(String criteriaOrder){
-       final RetrofitBuilder clientBuilder = new RetrofitBuilder();
+    public void fetchMovies(String criteriaOrder) {
+        final RetrofitBuilder clientBuilder = new RetrofitBuilder();
         service = clientBuilder.createRetrofitBuilder()
                 .create(GetMoviesService.class);
         Call<MovieResponses> moviesCall = null;
-        if(criteriaOrder.equals(getString(R.string.pref_most_popular))){
+        if (criteriaOrder.equals(getString(R.string.pref_most_popular))) {
             moviesCall = service.getPopularMovies(MOVIES_API_KEY);
-        }else if(criteriaOrder.equals(getString(R.string.pref_top_rated))){
+        } else if (criteriaOrder.equals(getString(R.string.pref_top_rated))) {
             moviesCall = service.getTopRatedMovies(MOVIES_API_KEY);
         }
-
         moviesCall.enqueue(new Callback<MovieResponses>() {
             @Override
             public void onResponse(Call<MovieResponses> call, Response<MovieResponses> response) {
                 List<PopularMovie> movieList = response.body().getResults();
-                recyclerView.setAdapter (new MovieAdapter(MainActivity.this, movieList));
+                recyclerView.setAdapter(new MovieAdapter(MainActivity.this, movieList));
                 recyclerView.smoothScrollToPosition(0);
                 if (swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
                 }
                 progressDialog.dismiss();
             }
+
             @Override
             public void onFailure(Call<MovieResponses> call, Throwable t) {
                 Toast.makeText(MainActivity.this, "Fetching process failed", Toast.LENGTH_SHORT).show();
             }
         });
     }
-}
 
+    public void initializeFavoriteMoviesList() {
+        favoriteDbHelper = new DbHelper(this);
+        progressDialog = new ProgressDialog(this);
+        moviesList = new ArrayList<>();
+        recyclerView = findViewById(R.id.recyclerView);
+        progressDialog.setMessage("Loading Movies...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        FavoriteMoviesAdapter adapter = new FavoriteMoviesAdapter(MainActivity.this, moviesList);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, calculateNumberOfColumns(this)));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(adapter);
+        moviesList.clear();
+        moviesList.addAll(favoriteDbHelper.getFavoriteMovies());
+        adapter.notifyDataSetChanged();
+        progressDialog.dismiss();
+
+    }
+}

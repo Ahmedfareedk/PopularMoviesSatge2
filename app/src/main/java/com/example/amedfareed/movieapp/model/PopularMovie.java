@@ -6,11 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import okhttp3.Interceptor;
-
-/**
- * Created by amedfareed on 05/03/18.
- */
-
 public class PopularMovie {
     @SerializedName("poster_path")
     private String posterPath;
@@ -31,7 +26,7 @@ public class PopularMovie {
     @SerializedName("vote_average")
     private Double voteAverage;
     @SerializedName("genre_ids")
-    private List<Integer> genreIds = new ArrayList<Integer>();
+    private List<Integer> genreIds = new ArrayList<>();
     @SerializedName("release_date")
     private String releaseDate;
     @SerializedName("backdrop_path")
@@ -56,6 +51,10 @@ public class PopularMovie {
         this.voteCount = voteCount;
         this.video = video;
         this.voteAverage = voteAverage;
+    }
+
+    public PopularMovie() {
+
     }
 
     public String getPosterPath() {
