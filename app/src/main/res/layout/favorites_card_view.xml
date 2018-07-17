@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:adjustViewBounds="true"
-    android:background="@color/layoutBackground">
+    android:background="@color/infoBackground">
 
     <android.support.v7.widget.CardView
         android:layout_width="match_parent"
@@ -12,7 +12,9 @@
         android:layout_gravity="center"
         android:fitsSystemWindows="true"
         app:cardBackgroundColor="@color/cardViewBackground"
-        app:cardCornerRadius="@dimen/coverCornerRadius">
+        app:cardCornerRadius="5dp"
+        android:padding="8dp"
+        android:layout_margin="4dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -20,7 +22,7 @@
             android:layout_gravity="bottom"
             >
             <ImageView
-                android:id="@+id/movie_card_poster"
+                android:id="@+id/favorite_movie_card_poster"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/movie_poster_height"
                 android:background="?attr/selectableItemBackgroundBorderless"
@@ -29,18 +31,18 @@
                 android:transitionName="thumbnail" />
 
             <TextView
-                android:id="@+id/movie_card_title"
+                android:id="@+id/favorite_movie_card_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/movie_card_poster"
+                android:layout_below="@+id/favorite_movie_card_poster"
                 android:padding="@dimen/movie_title_padding"
                 android:textColor="@color/movieTitle"
                 android:textSize="@dimen/cardTitleSize" />
                 <TextView
-                    android:id="@+id/card_user_rating"
+                    android:id="@+id/favorite_user_rating"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@id/movie_card_title"
+                    android:layout_below="@id/favorite_movie_card_title"
                     android:drawableLeft="@drawable/star"
                     android:drawablePadding="5dp"
                     android:paddingRight="@dimen/movie_title_padding"
