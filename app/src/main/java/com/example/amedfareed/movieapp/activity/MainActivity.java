@@ -3,48 +3,32 @@ package com.example.amedfareed.movieapp.activity;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
-import android.database.sqlite.SQLiteDatabase;
-import android.os.AsyncTask;
-import android.preference.Preference;
-import android.preference.PreferenceManager;
-import android.provider.CallLog;
-import android.support.annotation.NonNull;
-import android.support.design.internal.BottomNavigationItemView;
-import android.support.design.widget.BottomNavigationView;
-import android.support.v4.view.MenuItemCompat;
+import android.os.Parcelable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.telecom.Conference;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
 import android.widget.Toast;
 
-import com.example.amedfareed.movieapp.BuildConfig;
-import com.example.amedfareed.movieapp.MovieAdapter.FavoriteMoviesAdapter;
 import com.example.amedfareed.movieapp.MovieAdapter.MovieAdapter;
 import com.example.amedfareed.movieapp.R;
 import com.example.amedfareed.movieapp.data.DbHelper;
-import com.example.amedfareed.movieapp.data.MoviesContract;
 import com.example.amedfareed.movieapp.model.MovieResponses;
+import com.example.amedfareed.movieapp.model.MovieTrailerReponse;
 import com.example.amedfareed.movieapp.model.PopularMovie;
 import com.example.amedfareed.movieapp.rest.RetrofitBuilder;
 import com.example.amedfareed.movieapp.rest.GetMoviesService;
-import com.like.LikeButton;
-import com.like.OnLikeListener;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,7 +42,8 @@ import retrofit2.http.GET;
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String MOVIES_API_KEY = "";
+    private static final String MOVIES_API_KEY = "9340a47ece52c04bb89b417830b3f601";
+    private static final String BUNDLE_RECYCLER_LAYOUT = "recycler_layout";
     @BindView(R.id.recyclerView)
     RecyclerView recyclerView;
     @BindView(R.id.refreshLayout)
@@ -68,6 +53,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public List<PopularMovie> moviesList;
     public DbHelper favoriteDbHelper;
     private ProgressDialog progressDialog;
+    private Parcelable state = null;
+    GridLayoutManager layoutManager;
+    private Bundle recyclerViewStateBundle;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,9 +81,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         progressDialog.show();
         moviesList = new ArrayList<>();
         adapter = new MovieAdapter(MainActivity.this, moviesList);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, calculateNumberOfColumns(this)));
+        layoutManager = new GridLayoutManager(this, calculateNumberOfColumns(this));
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
         checkMoviesSortOrder();
     }
 
@@ -109,13 +101,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         int id = item.getItemId();
         switch (id) {
             case R.id.most_popular_action:
-                fetchMovies(getString(R.string.pref_most_popular));
+                fetchMovies(this.getString(R.string.pref_most_popular));
                 return true;
             case R.id.top_rated_action:
-                fetchMovies(getString(R.string.pref_top_rated));
+                fetchMovies(this.getString(R.string.pref_top_rated));
                 return true;
             case R.id.favorite_action:
-                initializeFavoriteMoviesList();
+                startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             default:
                 return false;
@@ -124,34 +116,48 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Toast.makeText(this, "preferences updated", Toast.LENGTH_LONG).show();
         checkMoviesSortOrder();
     }
 
     public void checkMoviesSortOrder() {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences preferences = getSharedPreferences("movie_app", MODE_PRIVATE);
         String mostPopularOrder = getString(R.string.pref_most_popular);
         String topRatedOrder = getString(R.string.pref_top_rated);
         String favoriteMovies = getString(R.string.pref_favorites);
         String sortOrderKey = getString(R.string.pref_sort_order_key);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("most_popular", mostPopularOrder);
+        editor.putString("top_rated", topRatedOrder);
+        editor.apply();
         String sortOrder = preferences.getString(sortOrderKey, mostPopularOrder);
-
-        if (sortOrder.equals(mostPopularOrder)) {
-            fetchMovies(mostPopularOrder);
-        } else if (sortOrder.equals(topRatedOrder)) {
+        if (sortOrder.equals(topRatedOrder)) {
             fetchMovies(topRatedOrder);
+        } else if (sortOrder.equals(mostPopularOrder)) {
+            fetchMovies(mostPopularOrder);
         } else if (sortOrder.equals(favoriteMovies)) {
-            initializeFavoriteMoviesList();
+            startActivity(new Intent(this, FavoritesActivity.class));
         }
     }
+
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (moviesList.isEmpty()) {
-            checkMoviesSortOrder();
-        } else {
-            checkMoviesSortOrder();
+        if (state != null) {
+                state = recyclerViewStateBundle.getParcelable(BUNDLE_RECYCLER_LAYOUT);
+                layoutManager.onRestoreInstanceState(state);
+            }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (state != null) {
+            state = layoutManager.onSaveInstanceState();
+            recyclerViewStateBundle.putParcelable(BUNDLE_RECYCLER_LAYOUT, state);
         }
+        Toast.makeText(this, "on Pause", Toast.LENGTH_SHORT).show();
     }
 
     public static int calculateNumberOfColumns(Context context) {
@@ -193,22 +199,4 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         });
     }
 
-    public void initializeFavoriteMoviesList() {
-        favoriteDbHelper = new DbHelper(this);
-        progressDialog = new ProgressDialog(this);
-        moviesList = new ArrayList<>();
-        recyclerView = findViewById(R.id.recyclerView);
-        progressDialog.setMessage("Loading Movies...");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-        FavoriteMoviesAdapter adapter = new FavoriteMoviesAdapter(MainActivity.this, moviesList);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, calculateNumberOfColumns(this)));
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.setAdapter(adapter);
-        moviesList.clear();
-        moviesList.addAll(favoriteDbHelper.getFavoriteMovies());
-        adapter.notifyDataSetChanged();
-        progressDialog.dismiss();
-
-    }
 }

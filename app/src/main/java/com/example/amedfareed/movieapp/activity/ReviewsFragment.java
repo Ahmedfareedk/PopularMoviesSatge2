@@ -17,6 +17,7 @@ import com.example.amedfareed.movieapp.MovieAdapter.ReviewsAdapter;
 import com.example.amedfareed.movieapp.R;
 import com.example.amedfareed.movieapp.model.MovieReviews;
 import com.example.amedfareed.movieapp.model.MovieReviewsResponses;
+import com.example.amedfareed.movieapp.model.PopularMovie;
 import com.example.amedfareed.movieapp.rest.GetMoviesService;
 import com.example.amedfareed.movieapp.rest.RetrofitBuilder;
 

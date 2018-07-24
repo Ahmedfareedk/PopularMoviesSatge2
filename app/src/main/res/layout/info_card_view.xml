@@ -76,7 +76,6 @@
                     android:layout_alignBottom="@id/info_user_rating_tv"
                     android:layout_below="@id/info_movie_title"
                     android:layout_alignParentEnd="true"
-
                     />
                 <TextView
                     android:id="@+id/info_release_date_tv"

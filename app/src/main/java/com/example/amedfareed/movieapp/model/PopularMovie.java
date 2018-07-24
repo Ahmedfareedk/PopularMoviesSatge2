@@ -58,7 +58,7 @@ public class PopularMovie {
     }
 
     public String getPosterPath() {
-        return "http://image.tmdb.org/t/p/w185/" + posterPath;
+        return posterPath;
     }
 
     public void setPosterPath(String posterPath) {

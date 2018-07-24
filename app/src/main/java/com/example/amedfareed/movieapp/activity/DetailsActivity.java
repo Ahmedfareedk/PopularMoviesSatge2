@@ -24,6 +24,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class DetailsActivity extends AppCompatActivity {
+    private final String BASE_POSTER_URL = "http://image.tmdb.org/t/p/w185/";
     @BindView(R.id.toolbar)
     Toolbar toolbar;
     @BindView(R.id.movie_poster)
@@ -36,6 +37,8 @@ public class DetailsActivity extends AppCompatActivity {
     ViewPager viewPager;
     @BindView(R.id.tab_layout)
     TabLayout tabLayout;
+
+    private String movieTitle, overView, releaseDate, movieUserRating, moviePosterPath;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,10 +49,16 @@ public class DetailsActivity extends AppCompatActivity {
         CategoryAdapter adapter = new CategoryAdapter(getSupportFragmentManager());
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
+
         Intent intent = getIntent();
-        String moviePosterPath = intent.getExtras().getString("poster_path");
+       /* movieTitle =intent.getExtras().getString("original_title");
+        moviePosterPath = intent.getExtras().getString("poster_path");
+        movieUserRating = intent.getExtras().getString("user_rating");
+        overView = intent.getExtras().getString("over_view");
+        releaseDate = intent.getExtras().getString("release_date");*/
+        moviePosterPath = intent.getExtras().getString("poster_path");
         Picasso.with(this)
-                    .load(moviePosterPath)
+                    .load(BASE_POSTER_URL + moviePosterPath)
                     .into(moviePoster);
         initializeCollapsingLayout();
     }

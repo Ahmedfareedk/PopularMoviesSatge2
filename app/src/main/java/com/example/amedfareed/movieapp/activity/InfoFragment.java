@@ -1,28 +1,22 @@
 package com.example.amedfareed.movieapp.activity;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Movie;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.support.v4.app.Fragment;
-import android.widget.Toast;
 
 import com.example.amedfareed.movieapp.R;
-import com.example.amedfareed.movieapp.data.DbHelper;
 import com.example.amedfareed.movieapp.data.MoviesContract;
-import com.example.amedfareed.movieapp.model.MovieResponses;
 import com.example.amedfareed.movieapp.model.PopularMovie;
-import com.github.ivbaranov.mfb.MaterialFavoriteButton;
 import com.like.LikeButton;
 import com.like.OnLikeListener;
 import com.squareup.picasso.Picasso;
@@ -33,13 +27,8 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-/**
- * Created by amedfareed on 20/04/18.
- */
-
 public class InfoFragment extends Fragment implements OnLikeListener {
-    /*@BindView(R.id.favorite_button)
-    MaterialFavoriteButton materialFavoriteButton;*/
+
     @BindView(R.id.info_movie_title)
     public TextView movieName;
     @BindView(R.id.info_review)
@@ -55,10 +44,9 @@ public class InfoFragment extends Fragment implements OnLikeListener {
     List<PopularMovie> movieList;
     Context mContext;
     int movieId;
-    SQLiteDatabase mdb;
-    private PopularMovie favoriteMovie;
-    private DbHelper favoriteDbHelper;
+    private PopularMovie movie;
     private String movieTitle, overView, releaseDate, movieUserRating, posterPath;
+    private final String BASE_POSTER_URL = "http://image.tmdb.org/t/p/w185/";
 
     @Nullable
     @Override
@@ -66,87 +54,96 @@ public class InfoFragment extends Fragment implements OnLikeListener {
         View view = inflater.inflate(R.layout.info_card_view, container, false);
         ButterKnife.bind(this, view);
         favoriteButton.setOnLikeListener(this);
-        DbHelper dbHelper = new DbHelper(getContext());
-        mdb = dbHelper.getWritableDatabase();
         initializeViews();
         return view;
     }
 
     public void initializeViews() {
         movieList = new ArrayList<>();
-        favoriteDbHelper = new DbHelper(getContext());
-        favoriteMovie = new PopularMovie();
-        mdb = favoriteDbHelper.getWritableDatabase();
-
-
+        movie = new PopularMovie();
         Intent intent = getActivity().getIntent();
-        Bundle extras = intent.getExtras();
-        if (extras != null ) {
-          //  favoriteMovie = intent.getParcelableExtra("movies");
+        if(intent.getExtras() != null) {
+            posterPath = intent.getExtras().getString("poster_path");
+            movieId = intent.getExtras().getInt("id");
+            movieTitle = intent.getExtras().getString("original_title");
+            overView = intent.getExtras().getString("over_view");
+            releaseDate = intent.getExtras().getString("release_date");
+            movieUserRating = intent.getExtras().getString("user_rating");
 
-            movieId = extras.getInt("id");
-            movieTitle = extras.getString("original_title");
-            overView = extras.getString("over_view");
-           mai releaseDate = extras.getString("release_date");
-            movieUserRating = extras.getString("user_rating");
-            posterPath = extras.getString("poster_path");
+
+            movieName.setText(movieTitle);
+            movieReview.setText(overView);
+            userRatingTV.setText(movieUserRating);
+            movieReleaseDate.setText(releaseDate);
+            Picasso.with(mContext)
+                    .load(BASE_POSTER_URL + posterPath)
+                    .into(detailPoster);
+        }
+          /*  posterPath = BASE_POSTER_URL + intent.getExtras().getString("m_poster_path");
+            movieId = intent.getExtras().getInt("m_id");
+            movieTitle = intent.getExtras().getString("m_original_title");
+            overView = intent.getExtras().getString("m_over_view");
+            releaseDate = intent.getExtras().getString("m_release_date");
             movieName.setText(movieTitle);
             movieReview.setText(overView);
             userRatingTV.setText(movieUserRating);
             movieReleaseDate.setText(releaseDate);
             Picasso.with(mContext)
                     .load(posterPath)
-                    .into(detailPoster);
+                    .into(detailPoster);*/
 
-            if(movieExists(movieTitle))
-                favoriteButton.setLiked(true);
+
+
+        if (!movieExists(movieTitle)) {
+            favoriteButton.setLiked(false);
+        } else{
+            favoriteButton.setLiked(true);
         }
     }
 
     @Override
     public void liked(LikeButton likeButton) {
-        saveFavoriteMovie();
+        addFavoriteMovie();
         Snackbar.make(likeButton, "Added to favorites!", Snackbar.LENGTH_LONG).show();
     }
 
     @Override
     public void unLiked(LikeButton likeButton) {
-        favoriteDbHelper.deleteFavorite(movieId);
+        deleteFavoriteMovie(movieId);
         Snackbar.make(likeButton, "Removed from favorites", Snackbar.LENGTH_LONG).show();
     }
 
     public boolean movieExists(String movieName) {
-        String[] projection = {
-                MoviesContract.MoviesDateBase._ID,
-                MoviesContract.MoviesDateBase.MOVIE_ID,
-                MoviesContract.MoviesDateBase.MOVIE_TITLE,
-                MoviesContract.MoviesDateBase.MOVIE_POSTER_PATH,
-                MoviesContract.MoviesDateBase.VOTE_AVERAGE
-        };
-        String selection = MoviesContract.MoviesDateBase.MOVIE_TITLE + " =?";
-        String[] selectionArgs = {movieName};
-        String limit = "1";
-
-        Cursor cursor = mdb.query(MoviesContract.MoviesDateBase.TABLE_NAME,
-                projection,
+        String selection = MoviesContract.MoviesDateBase.MOVIE_TITLE + "=?";
+        String[] selectionArgs = new String[]{movieName};
+        Cursor cursor = getActivity().getContentResolver().query(MoviesContract.MoviesDateBase.CONTENT_URI,
+                null,
                 selection,
                 selectionArgs,
-                null,
-                null,
-                limit);
-        boolean exists = (cursor.getCount() > 0);
-        cursor.close();
-        return exists;
+                null);
+        if (cursor != null && cursor.getCount() != 0) {
+            cursor.close();
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public void saveFavoriteMovie() {
-        favoriteMovie = new PopularMovie();
-        favoriteDbHelper = new DbHelper(getContext());
+    public void addFavoriteMovie() {
+        ContentValues values = new ContentValues();
+            values.put(MoviesContract.MoviesDateBase.MOVIE_ID, movieId);
+            values.put(MoviesContract.MoviesDateBase.MOVIE_TITLE, movieTitle);
+            values.put(MoviesContract.MoviesDateBase.MOVIE_POSTER_PATH, posterPath);
+            values.put(MoviesContract.MoviesDateBase.VOTE_AVERAGE, movieUserRating);
+            values.put(MoviesContract.MoviesDateBase.MOVIE_OVER_VIEW, overView);
+            values.put(MoviesContract.MoviesDateBase.MOVIE_RELEASE_DATE, releaseDate);
+        getActivity().getContentResolver().insert(MoviesContract.MoviesDateBase.CONTENT_URI, values);
+    }
 
-        favoriteMovie.setOriginalTitle(movieTitle);
-        favoriteMovie.setId(movieId);
-        favoriteMovie.setPosterPath(posterPath);
-        favoriteMovie.setVoteAverage(Double.parseDouble(movieUserRating));
-        favoriteDbHelper.addFavoriteMovie(favoriteMovie);
+    public void deleteFavoriteMovie(int id) {
+        String selection = MoviesContract.MoviesDateBase.MOVIE_ID + "=" + id;
+        getActivity().getContentResolver().delete(MoviesContract.MoviesDateBase.CONTENT_URI,
+                selection,
+                null);
     }
 }
