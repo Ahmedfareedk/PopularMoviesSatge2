@@ -14,7 +14,7 @@ import android.support.annotation.Nullable;
 public class MovieContentProvider extends ContentProvider {
     public static final int MOVIE = 100;
     public static final int MOVIE_WITH_ID = 101;
-    public static final UriMatcher sUriMatcher =new UriMatcher(UriMatcher.NO_MATCH);
+    public static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     private DbHelper myDbHelper;
 
@@ -23,6 +23,7 @@ public class MovieContentProvider extends ContentProvider {
         sUriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.MOVIES_PATH, MOVIE);
         sUriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.MOVIES_PATH + "/#", MOVIE_WITH_ID);
     }
+
     @Override
     public boolean onCreate() {
         myDbHelper = new DbHelper(getContext());
@@ -36,7 +37,7 @@ public class MovieContentProvider extends ContentProvider {
         Cursor cursor = null;
 
         int match = sUriMatcher.match(uri);
-        switch(match){
+        switch (match) {
             case MOVIE:
                 cursor = db.query(MoviesContract.MoviesDateBase.TABLE_NAME, projection, selection,
                         selectionArgs,
@@ -45,10 +46,10 @@ public class MovieContentProvider extends ContentProvider {
                         sortOrder);
                 break;
             case MOVIE_WITH_ID:
-                selection = MoviesContract.MoviesDateBase._ID + "=?";
+                selection = MoviesContract.MoviesDateBase.MOVIE_ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                cursor  = db.query(MoviesContract.MoviesDateBase.TABLE_NAME
-                ,projection, selection, selectionArgs,
+                cursor = db.query(MoviesContract.MoviesDateBase.TABLE_NAME
+                        , projection, selection, selectionArgs,
                         null,
                         null,
                         sortOrder);
@@ -74,19 +75,19 @@ public class MovieContentProvider extends ContentProvider {
         Uri insertedMovieUri;
         int match = sUriMatcher.match(uri);
 
-        switch (match){
+        switch (match) {
             case MOVIE:
-                insertedMovieId  = db.insert(MoviesContract.MoviesDateBase.TABLE_NAME,
+                insertedMovieId = db.insert(MoviesContract.MoviesDateBase.TABLE_NAME,
                         null,
                         values);
-                if(insertedMovieId > 0){
+                if (insertedMovieId > 0) {
                     insertedMovieUri = Uri.parse(MoviesContract.MoviesDateBase._ID);
-                }else {
-                    throw  new UnsupportedOperationException("Unknown Uri" + uri);
+                } else {
+                    throw new UnsupportedOperationException("Unknown Uri" + uri);
                 }
                 break;
-                default:
-                    throw new UnsupportedOperationException("Unknown Uri" + uri);
+            default:
+                throw new UnsupportedOperationException("Unknown Uri" + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
         return insertedMovieUri;
@@ -97,20 +98,20 @@ public class MovieContentProvider extends ContentProvider {
         SQLiteDatabase db = myDbHelper.getWritableDatabase();
         int deletedMovieId;
         int match = sUriMatcher.match(uri);
-        if(selection == null){
+        if (selection == null) {
             selection = "1";
         }
-        switch (match){
+        switch (match) {
             case MOVIE:
                 deletedMovieId = db.delete(MoviesContract.MoviesDateBase.TABLE_NAME,
                         selection,
                         selectionArgs
-                        );
+                );
                 break;
-                default:
-                    throw new UnsupportedOperationException("Unknown Uri" + uri);
+            default:
+                throw new UnsupportedOperationException("Unknown Uri" + uri);
         }
-        if(deletedMovieId != 0) {
+        if (deletedMovieId != 0) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
         return deletedMovieId;

@@ -3,6 +3,7 @@ package com.example.amedfareed.movieapp.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -38,12 +39,12 @@ public class ReviewsFragment extends Fragment {
     RecyclerView reviewsRV;
     List<MovieReviews> reviewsList;
     ReviewsAdapter adapter;
-    private static final String MOVIES_API_KEY = "9340a47ece52c04bb89b417830b3f601";
+
     public ReviewsFragment() {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
        View view =  inflater.inflate(R.layout.fragment_reviews, container, false);
         ButterKnife.bind(this, view);
@@ -66,7 +67,7 @@ public class ReviewsFragment extends Fragment {
         try {
             RetrofitBuilder builder = new RetrofitBuilder();
             GetMoviesService service = builder.createRetrofitBuilder().create(GetMoviesService.class);
-            Call<MovieReviewsResponses> call = service.getMovieReviews(id, MOVIES_API_KEY);
+            Call<MovieReviewsResponses> call = service.getMovieReviews(id, getString(R.string.api_key));
             call.enqueue(new Callback<MovieReviewsResponses>() {
                 @Override
                 public void onResponse(Call<MovieReviewsResponses> call, Response<MovieReviewsResponses> response) {

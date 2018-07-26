@@ -10,6 +10,7 @@
     <string name="pref_most_popular">MostPopular</string>
     <string name="pref_top_rated">TopRated</string>
     <string name="appName">Popular Movies</string>
+    <string name="api_key">"kindly, use your own API key"</string>
 
 
     <string name="pref_favorites">Favorites</string>

@@ -94,9 +94,7 @@ public class InfoFragment extends Fragment implements OnLikeListener {
 
 
 
-        if (!movieExists(movieTitle)) {
-            favoriteButton.setLiked(false);
-        } else{
+        if (movieExists(movieTitle)) {
             favoriteButton.setLiked(true);
         }
     }

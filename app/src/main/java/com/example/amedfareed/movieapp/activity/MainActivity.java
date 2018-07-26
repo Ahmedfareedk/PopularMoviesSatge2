@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Parcelable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -42,7 +43,7 @@ import retrofit2.http.GET;
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String MOVIES_API_KEY = "9340a47ece52c04bb89b417830b3f601";
+    private static final String MOVIE_APP_NAME = "movie_app";
     private static final String BUNDLE_RECYCLER_LAYOUT = "recycler_layout";
     @BindView(R.id.recyclerView)
     RecyclerView recyclerView;
@@ -51,11 +52,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public MovieAdapter adapter;
     private GetMoviesService service;
     public List<PopularMovie> moviesList;
-    public DbHelper favoriteDbHelper;
     private ProgressDialog progressDialog;
     private Parcelable state = null;
     GridLayoutManager layoutManager;
-    private Bundle recyclerViewStateBundle;
+
 
 
     @Override
@@ -72,6 +72,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         });
         initializeViewItems();
+        Toast.makeText(this, "on Create", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(BUNDLE_RECYCLER_LAYOUT, layoutManager.onSaveInstanceState());
+    }
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+       if (savedInstanceState != null){
+           state = savedInstanceState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
+           recyclerView.setAdapter(adapter);
+           layoutManager.onRestoreInstanceState(state);
+
+
+       }
+
     }
 
     public void initializeViewItems() {
@@ -89,47 +108,52 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         adapter.notifyDataSetChanged();
         checkMoviesSortOrder();
     }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
+        SharedPreferences preferences = getSharedPreferences(MOVIE_APP_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        String sortOrderKey = getString(R.string.pref_sort_order_key);
         switch (id) {
             case R.id.most_popular_action:
-                fetchMovies(this.getString(R.string.pref_most_popular));
+                String mostPopularOrder = getString(R.string.pref_most_popular);
+                editor.putString(sortOrderKey, mostPopularOrder);
+                editor.apply();
+                fetchMovies(mostPopularOrder);
                 return true;
             case R.id.top_rated_action:
-                fetchMovies(this.getString(R.string.pref_top_rated));
+                String topRatedOrder = getString(R.string.pref_top_rated);
+                editor.putString(sortOrderKey, topRatedOrder);
+                editor.apply();
+                fetchMovies(topRatedOrder);
                 return true;
             case R.id.favorite_action:
+                String favoriteOrder = getString(R.string.pref_favorites);
+                editor.putString(sortOrderKey, favoriteOrder);
+                editor.apply();
                 startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             default:
                 return false;
         }
     }
-
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Toast.makeText(this, "preferences updated", Toast.LENGTH_LONG).show();
         checkMoviesSortOrder();
     }
-
     public void checkMoviesSortOrder() {
-        SharedPreferences preferences = getSharedPreferences("movie_app", MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(MOVIE_APP_NAME, MODE_PRIVATE);
         String mostPopularOrder = getString(R.string.pref_most_popular);
         String topRatedOrder = getString(R.string.pref_top_rated);
         String favoriteMovies = getString(R.string.pref_favorites);
         String sortOrderKey = getString(R.string.pref_sort_order_key);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("most_popular", mostPopularOrder);
-        editor.putString("top_rated", topRatedOrder);
-        editor.apply();
+
         String sortOrder = preferences.getString(sortOrderKey, mostPopularOrder);
         if (sortOrder.equals(topRatedOrder)) {
             fetchMovies(topRatedOrder);
@@ -138,26 +162,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         } else if (sortOrder.equals(favoriteMovies)) {
             startActivity(new Intent(this, FavoritesActivity.class));
         }
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (state != null) {
-                state = recyclerViewStateBundle.getParcelable(BUNDLE_RECYCLER_LAYOUT);
-                layoutManager.onRestoreInstanceState(state);
-            }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (state != null) {
-            state = layoutManager.onSaveInstanceState();
-            recyclerViewStateBundle.putParcelable(BUNDLE_RECYCLER_LAYOUT, state);
-        }
-        Toast.makeText(this, "on Pause", Toast.LENGTH_SHORT).show();
     }
 
     public static int calculateNumberOfColumns(Context context) {
@@ -176,9 +180,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .create(GetMoviesService.class);
         Call<MovieResponses> moviesCall = null;
         if (criteriaOrder.equals(getString(R.string.pref_most_popular))) {
-            moviesCall = service.getPopularMovies(MOVIES_API_KEY);
+            moviesCall = service.getPopularMovies(getString(R.string.api_key));
         } else if (criteriaOrder.equals(getString(R.string.pref_top_rated))) {
-            moviesCall = service.getTopRatedMovies(MOVIES_API_KEY);
+            moviesCall = service.getTopRatedMovies(getString(R.string.api_key));
         }
         moviesCall.enqueue(new Callback<MovieResponses>() {
             @Override
@@ -186,8 +190,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 List<PopularMovie> movieList = response.body().getResults();
                 recyclerView.setAdapter(new MovieAdapter(MainActivity.this, movieList));
                 recyclerView.smoothScrollToPosition(0);
-                if (swipeRefreshLayout.isRefreshing()) {
-                    swipeRefreshLayout.setRefreshing(false);
+                if(state != null) {
+                    layoutManager.onRestoreInstanceState(state);
+                    if (swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
                 }
                 progressDialog.dismiss();
             }
@@ -198,5 +205,4 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         });
     }
-
 }

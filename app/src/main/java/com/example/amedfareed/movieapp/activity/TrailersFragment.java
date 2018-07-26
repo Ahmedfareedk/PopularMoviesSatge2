@@ -41,7 +41,6 @@ public class TrailersFragment extends Fragment {
     PopularMovie movie;
     int id;
     private GetMoviesService service;
-    private static final String MOVIES_API_KEY = "9340a47ece52c04bb89b417830b3f601";
 
     @Nullable
     @Override
@@ -67,7 +66,7 @@ public class TrailersFragment extends Fragment {
         try {
             //RetrofitBuilder clientBuilder = new RetrofitBuilder();
             service = RetrofitBuilder.createRetrofitBuilder().create(GetMoviesService.class);
-            Call<MovieTrailerReponse> call = service.getMovieTrailer(id, MOVIES_API_KEY);
+            Call<MovieTrailerReponse> call = service.getMovieTrailer(id, getString(R.string.api_key));
             call.enqueue(new Callback<MovieTrailerReponse>() {
                 @Override
                 public void onResponse(Call<MovieTrailerReponse> call, Response<MovieTrailerReponse> response) {
