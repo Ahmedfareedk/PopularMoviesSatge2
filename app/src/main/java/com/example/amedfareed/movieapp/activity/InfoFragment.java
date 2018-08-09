@@ -62,22 +62,24 @@ public class InfoFragment extends Fragment implements OnLikeListener {
         movieList = new ArrayList<>();
         movie = new PopularMovie();
         Intent intent = getActivity().getIntent();
-        if(intent.getExtras() != null) {
-            posterPath = intent.getExtras().getString("poster_path");
-            movieId = intent.getExtras().getInt("id");
-            movieTitle = intent.getExtras().getString("original_title");
-            overView = intent.getExtras().getString("over_view");
-            releaseDate = intent.getExtras().getString("release_date");
-            movieUserRating = intent.getExtras().getString("user_rating");
+        if(movieList != null) {
+            if (intent.getExtras() != null) {
+                posterPath = intent.getExtras().getString("poster_path");
+                movieId = intent.getExtras().getInt("id");
+                movieTitle = intent.getExtras().getString("original_title");
+                overView = intent.getExtras().getString("over_view");
+                releaseDate = intent.getExtras().getString("release_date");
+                movieUserRating = intent.getExtras().getString("user_rating");
 
 
-            movieName.setText(movieTitle);
-            movieReview.setText(overView);
-            userRatingTV.setText(movieUserRating);
-            movieReleaseDate.setText(releaseDate);
-            Picasso.with(mContext)
-                    .load(BASE_POSTER_URL + posterPath)
-                    .into(detailPoster);
+                movieName.setText(movieTitle);
+                movieReview.setText(overView);
+                userRatingTV.setText(movieUserRating);
+                movieReleaseDate.setText(releaseDate);
+                Picasso.with(mContext)
+                        .load(BASE_POSTER_URL + posterPath)
+                        .into(detailPoster);
+            }
         }
           /*  posterPath = BASE_POSTER_URL + intent.getExtras().getString("m_poster_path");
             movieId = intent.getExtras().getInt("m_id");
@@ -91,7 +93,6 @@ public class InfoFragment extends Fragment implements OnLikeListener {
             Picasso.with(mContext)
                     .load(posterPath)
                     .into(detailPoster);*/
-
 
 
         if (movieExists(movieTitle)) {
@@ -129,12 +130,12 @@ public class InfoFragment extends Fragment implements OnLikeListener {
 
     public void addFavoriteMovie() {
         ContentValues values = new ContentValues();
-            values.put(MoviesContract.MoviesDateBase.MOVIE_ID, movieId);
-            values.put(MoviesContract.MoviesDateBase.MOVIE_TITLE, movieTitle);
-            values.put(MoviesContract.MoviesDateBase.MOVIE_POSTER_PATH, posterPath);
-            values.put(MoviesContract.MoviesDateBase.VOTE_AVERAGE, movieUserRating);
-            values.put(MoviesContract.MoviesDateBase.MOVIE_OVER_VIEW, overView);
-            values.put(MoviesContract.MoviesDateBase.MOVIE_RELEASE_DATE, releaseDate);
+        values.put(MoviesContract.MoviesDateBase.MOVIE_ID, movieId);
+        values.put(MoviesContract.MoviesDateBase.MOVIE_TITLE, movieTitle);
+        values.put(MoviesContract.MoviesDateBase.MOVIE_POSTER_PATH, posterPath);
+        values.put(MoviesContract.MoviesDateBase.VOTE_AVERAGE, movieUserRating);
+        values.put(MoviesContract.MoviesDateBase.MOVIE_OVER_VIEW, overView);
+        values.put(MoviesContract.MoviesDateBase.MOVIE_RELEASE_DATE, releaseDate);
         getActivity().getContentResolver().insert(MoviesContract.MoviesDateBase.CONTENT_URI, values);
     }
 

@@ -1,6 +1,8 @@
 package com.example.amedfareed.movieapp.activity;
 
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -52,28 +54,50 @@ public class FavoritesActivity extends AppCompatActivity implements LoaderManage
         getSupportLoaderManager().initLoader(0, null, FavoritesActivity.this);
         layoutManager = new GridLayoutManager(this, MainActivity.calculateNumberOfColumns(this));
         favRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        adapter = new FavoriteMoviesAdapter(this, cursor);
         favRecyclerView.setHasFixedSize(true);
         favRecyclerView.setLayoutManager(layoutManager);
-        favRecyclerView.setAdapter(new FavoriteMoviesAdapter(this, cursor));
+        favRecyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if(state != null) {
-            state = layoutManager.onSaveInstanceState();
-            favRecState.putParcelable(BUNDLE_RECYCLER_LAYOUT, state);
-        }
+        favRecState = new Bundle();
+        state = favRecyclerView.getLayoutManager().onSaveInstanceState();
+        favRecState.putParcelable(BUNDLE_RECYCLER_LAYOUT, state);
     }
-    @Override
+  @Override
     protected void onResume() {
         super.onResume();
-        if(state != null){
+        if(favRecState != null){
             state = favRecState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
             layoutManager.onRestoreInstanceState(state);
         }
     }
 
+   /* @Override
+    public void onConfigurationChanged(final Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (favRecState != null) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    state = favRecState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
+                    layoutManager.onRestoreInstanceState(state);
+                }
+            }, 50);
+        }
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            layoutManager.setSpanCount(MainActivity.calculateNumberOfColumns(FavoritesActivity.this));
+        } else if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            layoutManager.setSpanCount(MainActivity.calculateNumberOfColumns(FavoritesActivity.this));
+        }
+        favRecyclerView.setLayoutManager(layoutManager);
+    }
+*/
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
@@ -95,9 +119,9 @@ public class FavoritesActivity extends AppCompatActivity implements LoaderManage
         }
     }
 
-        @Override
-        public void onLoaderReset (@NonNull Loader < Cursor > loader) {
-
-        }
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
 
     }
+
+}

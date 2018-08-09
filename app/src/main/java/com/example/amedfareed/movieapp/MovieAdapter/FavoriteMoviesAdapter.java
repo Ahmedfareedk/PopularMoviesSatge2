@@ -1,10 +1,12 @@
 package com.example.amedfareed.movieapp.MovieAdapter;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,21 +29,14 @@ import java.util.List;
  */
 
 public class FavoriteMoviesAdapter extends RecyclerView.Adapter<FavoriteMoviesAdapter.MyViewHolder> {
-    private List<PopularMovie> favoriteList;
     private Context mContext;
     Cursor cursor;
     private final String BASE_POSTER_URL = "http://image.tmdb.org/t/p/w185/";
-
-    public FavoriteMoviesAdapter(Context context, List<PopularMovie> mFavList) {
-        this.mContext = context;
-        this.favoriteList = mFavList;
-    }
 
     public FavoriteMoviesAdapter(Context mContext, Cursor mCursor) {
         this.mContext = mContext;
         this.cursor = mCursor;
     }
-
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -85,14 +80,15 @@ public class FavoriteMoviesAdapter extends RecyclerView.Adapter<FavoriteMoviesAd
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    /*Intent intent = new Intent(mContext, DetailsActivity.class);
+                    Intent intent = new Intent(mContext, DetailsActivity.class);
+                    intent.putExtra("id", cursor.getInt(cursor.getColumnIndex(MoviesContract.MoviesDateBase.MOVIE_ID)));
                     intent.putExtra("original_title", cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesDateBase.MOVIE_TITLE)));
                     intent.putExtra("poster_path", cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesDateBase.MOVIE_POSTER_PATH)));
-                    intent.putExtra("id", cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesDateBase.MOVIE_ID)));
                     intent.putExtra("user_rating", cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesDateBase.VOTE_AVERAGE)));
                     intent.putExtra("over_view", cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesDateBase.MOVIE_OVER_VIEW)));
                     intent.putExtra("release_date", cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesDateBase.MOVIE_RELEASE_DATE)));
-                    mContext.startActivity(intent);*/
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    mContext.startActivity(intent);
                 }
             });
         }

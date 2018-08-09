@@ -28,7 +28,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="TODO"
                 android:scaleType="fitXY"
-                android:transitionName="thumbnail" />
+                android:transitionName="poster" />
 
             <TextView
                 android:id="@+id/favorite_movie_card_title"

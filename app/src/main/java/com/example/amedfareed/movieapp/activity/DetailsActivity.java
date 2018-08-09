@@ -51,11 +51,6 @@ public class DetailsActivity extends AppCompatActivity {
         tabLayout.setupWithViewPager(viewPager);
 
         Intent intent = getIntent();
-       /* movieTitle =intent.getExtras().getString("original_title");
-        moviePosterPath = intent.getExtras().getString("poster_path");
-        movieUserRating = intent.getExtras().getString("user_rating");
-        overView = intent.getExtras().getString("over_view");
-        releaseDate = intent.getExtras().getString("release_date");*/
         moviePosterPath = intent.getExtras().getString("poster_path");
         Picasso.with(this)
                     .load(BASE_POSTER_URL + moviePosterPath)

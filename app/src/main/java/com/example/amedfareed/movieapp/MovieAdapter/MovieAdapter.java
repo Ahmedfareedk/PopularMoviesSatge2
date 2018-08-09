@@ -94,12 +94,12 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MyViewHolder
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
                         Intent intent = new Intent(context, DetailsActivity.class);
+                        intent.putExtra("id", moviesList.get(position).getId());
                         intent.putExtra("original_title", moviesList.get(position).getOriginalTitle());
                         intent.putExtra("poster_path", moviesList.get(position).getPosterPath());
                         intent.putExtra("over_view", moviesList.get(position).getOverview());
                         intent.putExtra("user_rating", Double.toString(moviesList.get(position).getVoteAverage()));
                         intent.putExtra("release_date", moviesList.get(position).getReleaseDate());
-                        intent.putExtra("id", moviesList.get(position).getId());
                         ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, moviePoster, "thumbnail");
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         context.startActivity(intent, options.toBundle());

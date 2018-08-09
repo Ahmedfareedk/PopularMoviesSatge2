@@ -71,9 +71,13 @@ public class ReviewsFragment extends Fragment {
             call.enqueue(new Callback<MovieReviewsResponses>() {
                 @Override
                 public void onResponse(Call<MovieReviewsResponses> call, Response<MovieReviewsResponses> response) {
-                    List<MovieReviews> list = response.body().getReviewResults();
-                    reviewsRV.setAdapter(new ReviewsAdapter(getContext(), list));
-                    reviewsRV.smoothScrollToPosition(0);
+                    if (response.isSuccessful()) {
+                        List<MovieReviews> list = response.body().getReviewResults();
+                        reviewsRV.setAdapter(new ReviewsAdapter(getContext(), list));
+                        reviewsRV.smoothScrollToPosition(0);
+                    }else{
+                        Log.e("reviews failed: ","it has" + response.message());
+                    }
                 }
 
                 @Override
