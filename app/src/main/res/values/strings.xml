@@ -12,6 +12,6 @@
     <string name="appName">Popular Movies</string>
     <string name="most_popular_order">popular</string>
     <string name="top_Rated_order">top_rated</string>
-    <string name="api_key">9340a47ece52c04bb89b417830b3f601</string>
+    <string name="api_key">kindly, use your own API key</string>
     <string name="pref_favorites">Favorites</string>
 </resources>
